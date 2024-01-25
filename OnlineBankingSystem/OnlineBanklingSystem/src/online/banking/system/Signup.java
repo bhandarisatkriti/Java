@@ -6,8 +6,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.Random;
 import java.awt.event.ActionListener;
+import java.sql.PreparedStatement;
+
 
 public class Signup extends JFrame implements ActionListener{
+    Connector connector;
     JTextField textName,textName1,fileaddress,emailField;
     JRadioButton button,button1,button2;
     JDateChooser dateChooser;
@@ -16,7 +19,9 @@ public class Signup extends JFrame implements ActionListener{
     long first1=(ran.nextLong()% 9000L)+1000L;
     String first=" "+Math.abs(first1);
     Signup(){
+
         super("Application Form");
+        connector = new Connector();
 
         JLabel label1=new JLabel("APPLICATION FORM NO"+first);
         label1.setBounds(160,20,600,40);
@@ -127,42 +132,55 @@ public class Signup extends JFrame implements ActionListener{
     }
     @Override
     public void actionPerformed(ActionEvent e) {
-     String formno=first;
-        String name= textName.getText();
-
-        String no =textName1.getText();
-        String dob=((JTextField)dateChooser.getDateEditor().getUiComponent()).getText();
-        String addr=fileaddress.getText();
-        String gender=null;
-        if(button.isSelected()){
-            gender="Male";
+        String formno = first;
+        String name = textName.getText();
+        String no = textName1.getText();
+        String addr = fileaddress.getText();
+        String gender = null;
+        if (button.isSelected()) {
+            gender = "Male";
         } else if (button1.isSelected()) {
-            gender="Female";
-        }else if (button2.isSelected()) {
-            gender="Others";
+            gender = "Female";
+        } else if (button2.isSelected()) {
+            gender = "Others";
         }
 
-        String email=emailField.getText();
+        String email = emailField.getText();
 
-        try{
-            if(textName.getText().isEmpty()){
-                JOptionPane.showMessageDialog(null,"Fill all the Fields");
-            }else{
-                Connector c1=new Connector();
-                String q="insert into signup values('"+formno+"',"+name+"','"+no+"''"+dob+"','"+addr+"','"+gender+"','"+email+"')";
-                c1.statement.executeUpdate(q);
+        try {
+            if (textName.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Fill all the Fields");
+            } else {
+                // Use the existing instance of Connector
+                // No need to create a new instance here
+                // Connector c1 = new Connector();
+
+                // Use PreparedStatement to avoid SQL injection
+                String query = "INSERT INTO signup VALUES (?, ?, ?, ?, ?, ?)";
+                PreparedStatement preparedStatement = connector.connection.prepareStatement(query);
+                preparedStatement.setString(1, formno);
+                preparedStatement.setString(2, name);
+                preparedStatement.setString(3, no);
+                preparedStatement.setString(4, addr);
+                preparedStatement.setString(5, gender);
+                preparedStatement.setString(6, email);
+
+                // Execute the update
+                preparedStatement.executeUpdate();
+
+                // Close the prepared statement
+                preparedStatement.close();
+
+                JOptionPane.showMessageDialog(null, "Sign-up successful!");
                 setVisible(false);
-
             }
-
-        }catch(Exception e1){
+        } catch (Exception e1) {
             e1.printStackTrace();
         }
-
     }
 
 
     public static void main(String[] args) {
-      new Signup();
+        new Signup();
     }
 }
